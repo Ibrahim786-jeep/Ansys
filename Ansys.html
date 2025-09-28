@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Securing Signal Integrity: Static + Prestressed Modal Simulation of an Antenna-PCB Jig in ANSYS</title>
+  <style>
+    /* ===== Basic Style to match sample blog look ===== */
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      background-color: #fafafa;
+      margin: 0;
+      padding: 0;
+    }
+    .wrapper {
+      max-width: 750px;
+      margin: 0 auto;
+      padding: 2em 1em;
+      background-color: #fff;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 0.5em;
+      color: #222;
+    }
+    h2 {
+      margin-top: 1.8em;
+      margin-bottom: 0.8em;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 0.3em;
+      color: #2a2a2a;
+    }
+    h3 {
+      margin-top: 1.4em;
+      color: #2a2a2a;
+    }
+    p {
+      line-height: 1.6;
+      margin: 1em 0;
+    }
+    ul, ol {
+      margin: 1em 0 1em 1.5em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.6em;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      margin: 1em 0;
+    }
+    .img-caption {
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 1em;
+    }
+    .byline {
+      color: #777;
+      font-style: italic;
+      margin-bottom: 2em;
+    }
+    .social-share {
+      margin-top: 2em;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 1em;
+    }
+    .footer {
+      margin-top: 3em;
+      padding-top: 2em;
+      border-top: 1px solid #e0e0e0;
+      color: #777;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1>Securing Signal Integrity: Static + Prestressed Modal Simulation of an Antenna-PCB Jig in ANSYS</h1>
+    <p class="byline">By [Your Name] • [Date]</p>
+
+    <h2>Introduction</h2>
+    <p>
+      Radar antennas under radomes must not only survive static loads (gravity, mounting stresses) but also keep signal integrity under vibrational excitation from wind, platform vibration, and environmental forces. Modeling both structural and dynamic performance is critical for a robust design.
+    </p>
+    <p>
+      In this project, I built a simulation workflow in ANSYS Mechanical for an **Antenna + Jig + PCB** system. The workflow consists of:
+    </p>
+    <ol>
+      <li>A static structural (pre-stress) analysis to derive displacement and stress fields under loading.</li>
+      <li>A prestressed modal analysis (i.e. modal analysis accounting for that pre-stress) to compute realistic natural frequencies and modes.</li>
+    </ol>
+    <p>
+      The outputs allow identification of resonant risk, vibrational behavior under actual load, and design improvements to protect signal stability in field conditions.
+    </p>
+
+    <h2>Theoretical Underpinnings</h2>
+    <p>
+      A standard modal analysis assumes no initial stress. But structures often operate under **pre-stress** (gravity, clamping forces, bolt preload, thermal loads). This pre-stress modifies the structure’s effective stiffness via geometric (stress) stiffness, altering natural frequencies and mode shapes.
+    </p>
+    <p>
+      In practice:
+      <br>– Tensile pre-stress tends to **increase** modal frequencies.<br>
+      – Compressive pre-stress may **decrease** them.<br>
+      This effect is captured by chaining a static analysis to a modal analysis with stress stiffness included.
+    </p>
+    <p>
+      This methodology is recommended in ANSYS Innovation Course materials under “Prestressed Modal Analysis.”  
+    </p>
+
+    <h2>Model Setup</h2>
+    <h3>Geometry & Materials</h3>
+    <ul>
+      <li><strong>PCB</strong>: FR-4, modeled as orthotropic elastic material.</li>
+      <li><strong>Jig</strong>: Aluminum alloy.</li>
+      <li><strong>Base plate</strong>: Aluminum alloy.</li>
+    </ul>
+    <p>Bonded contacts were defined at all interfaces (PCB ↔ Jig ↔ Base plate) to ensure unified load transfer.</p>
+
+    <h3>Loads & Constraints</h3>
+    <ul>
+      <li>Three fixed supports on the underside of support pillars (translations + rotations fixed).</li>
+      <li>Gravity ≈ 9.8066 m/s² applied globally.</li>
+      <li>No additional loads (e.g. aerodynamic, thermal) at this stage.</li>
+    </ul>
+
+    <h3>Meshing & Solver Choices</h3>
+    <p>
+      A refined mesh in critical zones (edge transitions, interfaces) ensures accurate stress capture. The static step is linear elastic; the modal (eigenvalue) step is run **with Prestress enabled**, linked to the static solution.  
+      In ANSYS Mechanical, one must set the modal “Pre-Stress Defined By” to use the static solution and choose how contact status propagates (e.g. True Status, Force Bonded, Force Sticking).
+    </p>
+
+    <h2>Static (Pre-Stress) Results</h2>
+    <table>
+      <thead>
+        <tr><th>Quantity</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Max total deformation</td><td>~ 5.2 × 10⁻⁵ m (≈ 52 μm)</td></tr>
+        <tr><td>PCB region deformation (probe)</td><td>~ 5.07 × 10⁻⁵ m</td></tr>
+        <tr><td>Max von-Mises stress</td><td>~ 1.24 × 10⁵ Pa (≈ 0.124 MPa)</td></tr>
+        <tr><td>Average assembly stress</td><td>~ 2.58 × 10⁴ Pa (≈ 0.0258 MPa)</td></tr>
+      </tbody>
+    </table>
+    <p class="img-caption">Insert stress contour and deformation plot from ANSYS here.</p>
+    <p>
+      <strong>Interpretation & checks:</strong> The deformations (tens of microns) are negligible for typical PCB mounting tolerances. The stresses are far below yield limits for both aluminum and FR-4. Be sure to validate mesh quality and avoid spurious concentrations near contact boundaries or constraints.
+    </p>
+
+    <h2>Prestressed Modal Results</h2>
+    <p>The first six natural frequencies (with pre-stress) were:</p>
+    <ol>
+      <li>87.27 Hz</li>
+      <li>90.06 Hz</li>
+      <li>98.24 Hz</li>
+      <li>111.79 Hz</li>
+      <li>131.08 Hz</li>
+      <li>157.09 Hz</li>
+    </ol>
+    <p class="img-caption">Insert mode shape images / animations (annotate PCB, Jig, Base) here.</p>
+    <p>
+      Lower modes show significant deformation in the PCB in bending/warping shapes. Because of the bonded interface and stiff constraint, the structure behaves more rigidly, raising frequencies. Comparing against a modal run without pre-stress would highlight the shift introduced by the static load.
+    </p>
+
+    <h2>Design Guidance & Forward Steps</h2>
+    <ul>
+      <li><strong>Compare modal frequencies to real excitation spectra</strong> (vibration, PSD, wind loading) from the operating platform.</li>
+      <li><strong>Run harmonic or random vibration analyses</strong> using modal results to compute forced responses, amplification factors, and fatigue stress cycles.</li>
+      <li><strong>Incorporate damping or isolation</strong> (viscoelastic layers, absorbers, vibration isolators) where resonant peaks overlap excitation bands.</li>
+      <li><strong>Perform parametric studies</strong> varying geometry, stiffness, bonding layout to shift resonances.</li>
+      <li><strong>Refine contact definitions</strong> (e.g. frictional/slip interfaces) and rerun static + modal to assess possible stiffness degradation under dynamic loads.</li>
+      <li><strong>Benchmark with experimental modal testing</strong> to validate frequencies and mode shapes against physical measurements.</li>
+    </ul>
+
+    <h2>Alignment with Best Practices</h2>
+    <p>
+      This workflow adheres to ANSYS’s recommended approach for loaded modal analysis: static → modal with stress stiffness. The careful propagation of contact state and inclusion of pre-stress aligns with official tutorials and literature.
+    </p>
+
+    <h2>Conclusion</h2>
+    <p>
+      In this blog, we walked through the full cycle: simulation motivation, model setup, static results, prestressed modal analysis, design interpretation, and next steps. Once you insert your annotated images and mode figures, this becomes a polished technical article ready for ChampionXperience.
+    </p>
+    <p>
+      If you’d like help embedding this into your CMS theme or adjusting layout styles (fonts, sidebars, responsive behavior), I’m happy to assist.
+    </p>
+
+    <div class="social-share">
+      <!-- Add your share buttons or widget here -->
+      <p>Share this article:</p>
+      <!-- e.g. icons for LinkedIn, Twitter, etc. -->
+    </div>
+
+    <div class="footer">
+      © [Year] ChampionXperience. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
